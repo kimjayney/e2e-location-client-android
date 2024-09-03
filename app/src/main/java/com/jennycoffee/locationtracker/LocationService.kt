@@ -53,7 +53,7 @@ class LocationService : Service() {
 
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec)
             val encryptedData = cipher.doFinal(data.toByteArray(Charsets.UTF_8))
-            Base64.encodeToString(encryptedData, Base64.DEFAULT)
+            Base64.encodeToString(encryptedData, Base64.NO_WRAP) // NO_WRAP 옵션 사용
         } catch (e: Exception) {
             e.printStackTrace()
             null
