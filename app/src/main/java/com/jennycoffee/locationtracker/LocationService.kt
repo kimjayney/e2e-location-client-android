@@ -25,9 +25,12 @@ import kotlin.random.Random
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 class LocationService : Service() {
-
+    var locationSessionPrivatekey = ""
+    var locationSessionDeviceId= ""
+    var locationSessionDeviceAuthorization = ""
     companion object {
         private const val TAG = "LocationService"
         private const val LOCATION_INTERVAL = 1000L
@@ -95,6 +98,15 @@ class LocationService : Service() {
             }
         }.start()
     }
+    fun encodeUrlWithUrlParam(baseUrl: String, paramUrl: String): String {
+        val encoded = URLEncoder.encode(paramUrl, StandardCharsets.UTF_8.toString())
+        return "$baseUrl?target=$encoded"
+    }
+
+    fun encode(value: String): String =
+        URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
+
+
 
     private inner class MyLocationListener(provider: String) : LocationListener {
         private var mLastLocation: Location = Location(provider)
@@ -104,9 +116,11 @@ class LocationService : Service() {
         }
 
         override fun onLocationChanged(location: Location) {
-            val testkey = createIV(32)
-//            val testkey = "ht6hsbtiyvmy4dw4exv0shtgg6nuqy78"
+//            val testkey = createIV(32)
+
+            val testkey = locationSessionPrivatekey
             val iv = createIV(16)
+
             val encrypted_lat = aesEncrypt(testkey, iv, location.latitude.toString())
             val encrypted_lng = aesEncrypt(testkey, iv, location.longitude.toString())
             Log.d(TAG, "Key: $testkey")
@@ -116,9 +130,21 @@ class LocationService : Service() {
             val decrypt_lng = aesDecrypt(testkey, iv, encrypted_lng)
             Log.d(TAG, "decrypted_lng: $decrypt_lat")
             Log.d(TAG, "decrypt_lng: $decrypt_lng")
-            val urlStr = "https://jayneycoffee.api.location.rainclab.net/api/update?lat=$encrypted_lat&lng=$encrypted_lng&iv=$iv&device=your_device_id&authorization=your_device_key"
-            Log.d("urlStr", urlStr)
-            sendGetRequest(urlStr)
+
+
+            val baseUrl = "https://jayneycoffee.api.location.rainclab.net/api/update"
+
+            val parameters = "?lat=${encrypted_lat?.let { encode(it) }}" +
+                    "&lng=${encrypted_lng?.let { encode(it) }}" +
+                    "&iv=${encode(iv)}" +
+                    "&device=${encode(locationSessionDeviceId)}" +
+                    "&authorization=${encode(locationSessionDeviceAuthorization)}"
+
+            val finalUrl = baseUrl + parameters
+
+//            val urlStr = "https://jayneycoffee.api.location.rainclab.net"
+            Log.d("urlStr", finalUrl)
+            sendGetRequest(finalUrl)
 
             mLastLocation.set(location)
             // 위치 변경 시 추가 작업 가능
@@ -152,7 +178,14 @@ class LocationService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.e(TAG, "onStartCommand")
-        sendGetRequest("https://jayneycoffee.api.location.rainclab.net/api/device/register?device=your_device_id&authorization=your_device_key")
+        val input1 = AppPreferences.getInput1(this)
+        val input2 = AppPreferences.getInput2(this)
+        val input3 = AppPreferences.getInput3(this)
+        Log.d("LocationService", "불러온 값: input1=$input1, input2=$input2, input3=$input3")
+        locationSessionDeviceId = input1
+        locationSessionDeviceAuthorization = input2
+        locationSessionPrivatekey = input3
+        sendGetRequest("https://jayneycoffee.api.location.rainclab.net/api/device/register?device=$input1&authorization=$input2")
         startForegroundService()
         return START_STICKY
     }

@@ -1,21 +1,25 @@
 package com.jennycoffee.locationtracker
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-
+import android.widget.Toast
 class MainActivity : AppCompatActivity() {
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
@@ -25,6 +29,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: ArrayAdapter<String>
     private val locationList = ArrayList<String>()
 
+    private lateinit var editText1: EditText
+    private lateinit var editText2: EditText
+    private lateinit var editText3: EditText
+    private lateinit var buttonSave: Button
+
+    fun createIV(length: Int): String {
+        val letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+        return (1..length)
+            .map { letters.random() }
+            .joinToString("")
+    }
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
 //            val latitude = intent?.getStringExtra("LATITUDE") ?: "N/A"
@@ -39,15 +54,47 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         textViewLocation = findViewById(R.id.textViewLocation)
-        locationListView = findViewById(R.id.locationListView)
+//        locationListView = findViewById(R.id.locationListView)
+        editText1 = findViewById(R.id.editText1)
+        editText2 = findViewById(R.id.editText2)
+        editText3 = findViewById(R.id.editText3)
+        buttonSave = findViewById(R.id.buttonSave)
+
+        editText1.setText(AppPreferences.getInput1(this))
+        editText2.setText(AppPreferences.getInput2(this))
+        editText3.setText(AppPreferences.getInput3(this))
+        val button = findViewById<Button>(R.id.LinkOpen)
+
 
         adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, locationList)
-        locationListView.adapter = adapter
+//        locationListView.adapter = adapter
+        buttonSave.setOnClickListener {
+            val input1 = editText1.text.toString()
+            val input2 = editText2.text.toString()
+            var input3 = editText3.text.toString()
+            if (input3 == "") {
+                input3 = createIV(32)
+            }
+            AppPreferences.saveInputs(this, input1, input2, input3)
+            Toast.makeText(this, input3, Toast.LENGTH_SHORT).show()
+        }
+
+
+        button.setOnClickListener {
+            val id = AppPreferences.getInput1(this)  // 또는 getInput2(this), getInput3(this) 등
+            val deviceKey = AppPreferences.getInput2(this)  // 또는 getInput2(this), getInput3(this) 등
+            val privateKey = AppPreferences.getInput3(this)  // 또는 getInput2(this), getInput3(this) 등
+
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://jayneycoffee.location.rainclab.net/#locationui?deviceId=$id&deviceKey=$deviceKey&privateKey=$privateKey"))
+            startActivity(intent)
+        }
+
 
         // 권한 체크 및 요청
         checkPermissions()

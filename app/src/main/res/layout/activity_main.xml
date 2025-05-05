@@ -8,17 +8,50 @@
         android:id="@+id/textViewLocation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Location will be displayed here"
+        android:text="Location Tracker"
         android:textSize="18sp"
         android:textColor="@android:color/black"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
-
-    <ListView
-        android:id="@+id/locationListView"
+    <EditText
+        android:id="@+id/editText1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="id"
         android:layout_below="@id/textViewLocation"
+        android:layout_marginTop="24dp" />
+
+    <EditText
+        android:id="@+id/editText2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="pw"
+        android:layout_below="@id/editText1"
         android:layout_marginTop="16dp" />
 
+    <EditText
+        android:id="@+id/editText3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="privateKey"
+        android:focusable="false"
+        android:clickable="false"
+        android:layout_below="@id/editText2"
+        android:layout_marginTop="16dp" />
+
+
+    <Button
+        android:id="@+id/buttonSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="저장하기"
+        android:layout_below="@id/editText3"
+        android:layout_marginTop="16dp" />
+    <Button
+        android:id="@+id/LinkOpen"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="웹 브라우저로 보기"
+        android:layout_below="@id/buttonSave"
+        android:layout_marginTop="16dp" />
 </RelativeLayout>
