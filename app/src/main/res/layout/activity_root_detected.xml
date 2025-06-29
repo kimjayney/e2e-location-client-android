@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp"
+    android:background="@android:color/black">
+
+    <!-- 경고 아이콘 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="⚠️"
+        android:textSize="80sp"
+        android:layout_marginBottom="32dp" />
+
+    <!-- 제목 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="보안 경고"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/holo_red_light"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <!-- 메시지 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="루팅된 기기에서 실행할 수 없습니다.\n\n보안상의 이유로 이 앱은 루팅된 기기에서 실행되지 않습니다.\n\n앱을 종료합니다."
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:lineSpacingExtra="8dp"
+        android:layout_marginBottom="48dp" />
+
+    <!-- 앱 종료 버튼 -->
+    <Button
+        android:id="@+id/buttonExit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="앱 종료"
+        android:background="@android:color/holo_red_dark"
+        android:textColor="@android:color/white"
+        android:padding="16dp" />
+
+</LinearLayout> 

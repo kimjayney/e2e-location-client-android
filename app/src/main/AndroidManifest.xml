@@ -17,16 +17,38 @@
         android:theme="@style/Theme.LocationTracker"
         tools:targetApi="31">
 
+        <!-- 스플래시 액티비티 (시작 액티비티) -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.LocationTracker">
+            android:theme="@style/Theme.LocationTracker.Splash"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 루팅 감지 액티비티 -->
+        <activity
+            android:name=".RootDetectedActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:screenOrientation="portrait" />
+
+        <!-- 메인 액티비티 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.LocationTracker"
+            android:screenOrientation="portrait" />
+
+        <!-- 설정 액티비티 -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.LocationTracker"
+            android:screenOrientation="portrait" />
 
         <service
             android:name=".LocationService"

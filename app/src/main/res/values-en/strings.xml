@@ -1,0 +1,67 @@
+<resources>
+    <string name="app_name">GPS Location Tracker</string>
+    <string name="app_title">Real-time Location Tracker</string>
+    <string name="app_description">Real-time location tracking and monitoring app</string>
+    <string name="device_id_hint">Enter Device ID</string>
+    <string name="device_key_hint">Enter Device Key</string>
+    <string name="private_key_hint">Private Key (Auto-generated)</string>
+    <string name="save_button">Save Settings</string>
+    <string name="view_web_button">View Location on Web</string>
+    <string name="location_status">Location Tracking Status</string>
+    <string name="tracking_status">Location Tracking Status</string>
+    <string name="last_location_info">Last Location Information</string>
+    <string name="tracking_active">Location tracking active...</string>
+    <string name="tracking_inactive">Location tracking inactive</string>
+    <string name="permission_required">Location permission is required</string>
+    <string name="settings_saved">Settings saved successfully</string>
+    <string name="auto_generated_key">Auto-generated key: %s</string>
+    <string name="setup_guide">How to Use</string>
+    <string name="setup_step1">1. Enter Device ID and Key</string>
+    <string name="setup_step2">2. Press Save Settings button</string>
+    <string name="setup_step3">3. Allow location permission</string>
+    <string name="setup_step4">4. App will track location in background</string>
+    <string name="setup_step5">5. Use View Location on Web button to check real-time location</string>
+    
+    <!-- Battery saving settings -->
+    <string name="battery_settings">Battery Saving Settings</string>
+    <string name="update_interval">Update Interval</string>
+    <string name="update_distance">Minimum Distance</string>
+    <string name="battery_saving_mode">Battery Saving Mode</string>
+    <string name="normal_mode">Normal Mode</string>
+    <string name="power_saving_mode">Power Saving Mode</string>
+    <string name="ultra_saving_mode">Ultra Saving Mode</string>
+    <string name="current_settings">Current Settings: %1$s interval, %2$s distance</string>
+    
+    <!-- Location tracking control -->
+    <string name="tracking_control">Location Tracking Control</string>
+    <string name="pause_tracking">Pause Tracking</string>
+    <string name="resume_tracking">Resume Tracking</string>
+    <string name="pause_5min">Pause for 5 minutes</string>
+    <string name="pause_10min">Pause for 10 minutes</string>
+    <string name="pause_30min">Pause for 30 minutes</string>
+    <string name="stop_tracking">Stop Tracking Completely</string>
+    <string name="tracking_paused">Location tracking has been paused</string>
+    <string name="tracking_resumed">Location tracking has been resumed</string>
+    <string name="tracking_stopped">Location tracking has been stopped</string>
+    <string name="pause_until">Paused until: %s</string>
+    <string name="pause_duration">Paused: %d minutes remaining</string>
+    <string name="execute_action">Execute</string>
+    
+    <!-- Language settings -->
+    <string name="language_settings">Language Settings</string>
+    <string name="korean">한국어</string>
+    <string name="english">English</string>
+    
+    <!-- Initial setup guide -->
+    <string name="setup_required">Setup Required</string>
+    <string name="setup_complete">Setup Complete</string>
+    <string name="setup_incomplete">Please enter Device ID and Key</string>
+    <string name="setup_guide_title">First time user?</string>
+    <string name="setup_guide_subtitle">Please complete the setup by following the steps below</string>
+    <string name="step_1_title">Step 1: Enter Device Information</string>
+    <string name="step_1_desc">Enter Device ID and Key, then press Save Settings</string>
+    <string name="step_2_title">Step 2: Allow Location Permission</string>
+    <string name="step_2_desc">Allow permission for location tracking</string>
+    <string name="step_3_title">Step 3: Start Tracking</string>
+    <string name="step_3_desc">Location tracking will start automatically after saving settings</string>
+</resources> 
