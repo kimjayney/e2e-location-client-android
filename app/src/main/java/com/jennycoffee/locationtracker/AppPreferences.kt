@@ -18,6 +18,7 @@ object AppPreferences {
     private const val KEY_LAST_SEND_TIME = "last_send_time"
     private const val KEY_SEND_COUNT = "send_count"
     private const val KEY_SEND_LOGS = "send_logs"
+    private const val KEY_SHARE_STATUS = "share_status"
     private const val MAX_LOG_ENTRIES = 100
 
     fun saveInputs(context: Context, input1: String, input2: String, input3: String) {
@@ -247,5 +248,33 @@ object AppPreferences {
             diff < 86400000 -> "${diff / 3600000}시간 전"
             else -> "${diff / 86400000}일 전"
         }
+    }
+
+    // 위치 공유 상태 관리
+    fun saveShareStatus(context: Context, isAllowed: Boolean) {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
+            .putBoolean(KEY_SHARE_STATUS, isAllowed)
+            .apply()
+    }
+
+    fun getShareStatus(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_SHARE_STATUS, true) // 기본값은 허용(true)
+    }
+
+    fun isLocationSharingAllowed(context: Context): Boolean {
+        return getShareStatus(context)
+    }
+
+    // 외부에서 위치 공유 상태 조회 (API용)
+    fun getShareStatusForAPI(context: Context): String {
+        return if (getShareStatus(context)) "1" else "0"
+    }
+
+    // 서버에서 위치 공유 상태 동기화
+    fun syncShareStatusFromServer(context: Context, serverStatus: String) {
+        val isAllowed = serverStatus == "1"
+        saveShareStatus(context, isAllowed)
     }
 }

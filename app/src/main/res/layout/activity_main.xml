@@ -37,10 +37,29 @@
         android:textSize="14sp"
         android:textColor="@android:color/darker_gray"
         android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <!-- 위치 추적 시작/정지 버튼 -->
+    <Button
+        android:id="@+id/buttonToggleTracking"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/start_tracking"
+        android:background="@drawable/button_rounded_blue"
+        android:textColor="@android:color/white"
+        android:padding="16dp"
         android:layout_marginBottom="16dp" />
 
-    <!-- 위치 전송 기록 -->
-    <!-- sendRecordText TextView 전체 삭제 -->
+    <!-- 다른 사람에게 공유하기 버튼 -->
+    <Button
+        android:id="@+id/buttonViewWeb"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/share_location"
+        android:background="@drawable/button_rounded_green"
+        android:textColor="@android:color/white"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp" />
 
     <!-- 설정 화면으로 이동 버튼 -->
     <Button
@@ -48,18 +67,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="설정"
-        android:background="@android:color/holo_blue_dark"
-        android:textColor="@android:color/white"
-        android:padding="16dp"
-        android:layout_marginBottom="16dp" />
-
-    <!-- 웹에서 위치 보기 버튼 -->
-    <Button
-        android:id="@+id/buttonViewWeb"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/view_web_button"
-        android:background="@android:color/holo_green_dark"
+        android:background="@drawable/button_rounded_orange"
         android:textColor="@android:color/white"
         android:padding="16dp"
         android:layout_marginBottom="32dp" />

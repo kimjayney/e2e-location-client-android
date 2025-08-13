@@ -2,6 +2,9 @@
     <string name="app_name">GPS 위치 추적기</string>
     <string name="app_title">실시간 위치 추적기</string>
     <string name="app_description">실시간 위치 추적 및 모니터링 앱</string>
+    <string name="start_tracking">위치 추적 시작</string>
+    <string name="stop_tracking_main">위치 추적 중지</string>
+    <string name="share_location">다른 사람에게 공유하기</string>
     <string name="device_id_hint">디바이스 ID를 입력하세요</string>
     <string name="device_key_hint">디바이스 키를 입력하세요</string>
     <string name="private_key_hint">개인 키 (자동 생성됨)</string>
@@ -15,6 +18,12 @@
     <string name="permission_required">위치 권한이 필요합니다</string>
     <string name="settings_saved">설정이 저장되었습니다</string>
     <string name="auto_generated_key">자동 생성된 키: %s</string>
+    <string name="reset_shared_url">공유 URL 초기화</string>
+    <string name="shared_url_reset">공유 URL이 초기화되었습니다</string>
+    <string name="reset_shared_url_title">공유 URL 초기화</string>
+    <string name="reset_shared_url_message">이 버튼은 기존 URL로 더이상 수집이 되지 않는 것을 의미 합니다. 진행 할까요?</string>
+    <string name="yes">예</string>
+    <string name="no">아니오</string>
     <string name="setup_guide">사용법</string>
     <string name="setup_step1">1. 디바이스 ID와 키를 입력하세요</string>
     <string name="setup_step2">2. 설정 저장 버튼을 누르세요</string>
@@ -46,6 +55,10 @@
     <string name="pause_until">일시정지: %s까지</string>
     <string name="pause_duration">일시정지: %d분 남음</string>
     <string name="execute_action">실행</string>
+    <string name="location_sharing_settings">위치 공유 설정</string>
+    <string name="sharing_allowed">위치 공유 허용</string>
+    <string name="sharing_blocked">위치 공유 차단</string>
+    <string name="sharing_status_updated">위치 공유 상태가 업데이트되었습니다</string>
     
     <!-- 언어 설정 -->
     <string name="language_settings">언어 설정</string>

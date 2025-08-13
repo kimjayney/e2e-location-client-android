@@ -8,28 +8,31 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.RadioGroup
-import android.widget.TextView
+import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.widget.Toast
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import com.jennycoffee.locationtracker.BuildConfig
+import org.json.JSONObject
 
 class SettingsActivity : AppCompatActivity() {
 
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
     private val TAG = "SettingsActivity"
 
-    private lateinit var editText1: EditText
-    private lateinit var editText2: EditText
-    private lateinit var editText3: EditText
     private lateinit var buttonSave: Button
     private lateinit var buttonBack: Button
-    private lateinit var batteryModeGroup: RadioGroup
+    private lateinit var buttonResetSharedUrl: Button
+    private lateinit var batteryModeSpinner: Spinner
+    private lateinit var trackingControlSpinner: Spinner
+    private lateinit var shareStatusSpinner: Spinner
     private lateinit var currentSettingsText: TextView
-    private lateinit var trackingControlGroup: RadioGroup
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,14 +50,13 @@ class SettingsActivity : AppCompatActivity() {
 
         try {
             // UI 요소 초기화
-            editText1 = findViewById(R.id.editText1)
-            editText2 = findViewById(R.id.editText2)
-            editText3 = findViewById(R.id.editText3)
             buttonSave = findViewById(R.id.buttonSave)
             buttonBack = findViewById(R.id.buttonBack)
-            batteryModeGroup = findViewById(R.id.batteryModeGroup)
+            buttonResetSharedUrl = findViewById(R.id.buttonResetSharedUrl)
+            batteryModeSpinner = findViewById(R.id.batteryModeSpinner)
+            trackingControlSpinner = findViewById(R.id.trackingControlSpinner)
+            shareStatusSpinner = findViewById(R.id.shareStatusSpinner)
             currentSettingsText = findViewById(R.id.currentSettingsText)
-            trackingControlGroup = findViewById(R.id.trackingControlGroup)
             Log.d(TAG, "UI 요소 초기화 완료")
         } catch (e: Exception) {
             Log.e(TAG, "UI 요소 초기화 실패", e)
@@ -64,29 +66,11 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         try {
-            // 저장된 설정 불러오기
-            editText1.setText(AppPreferences.getInput1(this))
-            editText2.setText(AppPreferences.getInput2(this))
-            editText3.setText(AppPreferences.getInput3(this))
-            Log.d(TAG, "저장된 설정 불러오기 완료")
+            // Spinner 초기화
+            initializeSpinners()
+            Log.d(TAG, "Spinner 초기화 완료")
         } catch (e: Exception) {
-            Log.e(TAG, "저장된 설정 불러오기 실패", e)
-        }
-
-        try {
-            // 배터리 모드 설정 초기화
-            initializeBatteryMode()
-            Log.d(TAG, "배터리 모드 초기화 완료")
-        } catch (e: Exception) {
-            Log.e(TAG, "배터리 모드 초기화 실패", e)
-        }
-
-        try {
-            // 위치 추적 제어 초기화
-            initializeTrackingControls()
-            Log.d(TAG, "위치 추적 제어 초기화 완료")
-        } catch (e: Exception) {
-            Log.e(TAG, "위치 추적 제어 초기화 실패", e)
+            Log.e(TAG, "Spinner 초기화 실패", e)
         }
 
         try {
@@ -98,21 +82,18 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         try {
+            // 공유 URL 초기화 버튼 클릭 리스너
+            buttonResetSharedUrl.setOnClickListener { view ->
+                Log.d(TAG, "공유 URL 초기화 버튼 클릭됨")
+                animateButtonClick(view)
+                showResetSharedUrlDialog()
+            }
+
             // 저장 버튼 클릭 리스너
             buttonSave.setOnClickListener { view ->
                 Log.d(TAG, "저장 버튼 클릭됨")
                 animateButtonClick(view)
                 saveSettings()
-            }
-
-            // 키 초기화 버튼 클릭 리스너
-            val buttonResetKey = findViewById<Button>(R.id.buttonResetKey)
-            buttonResetKey.setOnClickListener { view ->
-                Log.d(TAG, "키 초기화 버튼 클릭됨")
-                animateButtonClick(view)
-                val newKey = createSecureKey(32)
-                editText3.setText(newKey)
-                Toast.makeText(this, "새 키가 생성되었습니다", Toast.LENGTH_SHORT).show()
             }
 
             // 뒤로가기 버튼 클릭 리스너
@@ -129,109 +110,177 @@ class SettingsActivity : AppCompatActivity() {
         Log.d(TAG, "onCreate 완료")
     }
 
-    private fun createIV(length: Int): String {
-        Log.d(TAG, "IV 생성 시작: 길이=$length")
-        val letters = "abcdefghijklmnopqrstuvwxyz0123456789"
-        val result = (1..length)
-            .map { letters.random() }
-            .joinToString("")
-        Log.d(TAG, "IV 생성 완료: $result")
-        return result
+    private fun initializeSpinners() {
+        // 배터리 모드 Spinner 초기화
+        val batteryModes = arrayOf("일반 모드", "절약 모드", "초절약 모드")
+        val batteryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, batteryModes)
+        batteryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        batteryModeSpinner.adapter = batteryAdapter
+
+        // 현재 배터리 모드 설정
+        val currentBatteryMode = AppPreferences.getBatteryMode(this)
+        val batteryModeIndex = when (currentBatteryMode) {
+            "normal" -> 0
+            "power" -> 1
+            "ultra" -> 2
+            else -> 0
+        }
+        batteryModeSpinner.setSelection(batteryModeIndex)
+
+        // 위치 추적 제어 Spinner 초기화
+        val trackingControls = arrayOf("추적 재개", "5분 동안 일시정지", "10분 동안 일시정지", "30분 동안 일시정지")
+        val trackingAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, trackingControls)
+        trackingAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        trackingControlSpinner.adapter = trackingAdapter
+
+        // 현재 추적 상태 설정
+        if (AppPreferences.isTrackingPaused(this)) {
+            trackingControlSpinner.setSelection(1) // 기본값으로 5분 일시정지
+        } else {
+            trackingControlSpinner.setSelection(0) // 추적 재개
+        }
+
+        // 위치 공유 상태 Spinner 초기화
+        val shareStatuses = arrayOf("위치 공유 허용", "위치 공유 차단")
+        val shareAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, shareStatuses)
+        shareAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        shareStatusSpinner.adapter = shareAdapter
+
+        // 현재 공유 상태 설정
+        val currentShareStatus = AppPreferences.getShareStatus(this)
+        shareStatusSpinner.setSelection(if (currentShareStatus) 0 else 1)
     }
 
-    // 영문 대소문자 + 숫자 + 특수문자 포함 키 생성 함수
-    private fun createSecureKey(length: Int): String {
-        // 영문 대소문자 + 숫자 + 특수문자만 사용
-        val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
-        val result = (1..length)
+    private fun resetSharedUrl() {
+        try {
+            Log.d(TAG, "공유 URL 초기화 시작")
+            
+            // 새로운 키 생성
+            val newDeviceId = createRandomString(16)
+            val newDeviceKey = createRandomString(16)
+            val newPrivateKey = createSecureKey(32)
+            
+            Log.d(TAG, "새 키 생성 완료: deviceId=$newDeviceId, deviceKey=$newDeviceKey")
+            
+            // 새 키 저장
+            AppPreferences.saveInputs(this, newDeviceId, newDeviceKey, newPrivateKey)
+            
+            // 디바이스 등록 API 호출
+            registerNewDevice(newDeviceId, newDeviceKey)
+            
+            Toast.makeText(this, getString(R.string.shared_url_reset), Toast.LENGTH_LONG).show()
+            
+            Log.d(TAG, "공유 URL 초기화 완료")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "공유 URL 초기화 실패", e)
+            Toast.makeText(this, "초기화 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun registerNewDevice(deviceId: String, deviceKey: String) {
+        Thread {
+            try {
+                val url = BuildConfig.SERVER_URL + "/api/device/register?device=$deviceId&authorization=$deviceKey"
+                Log.d(TAG, "디바이스 등록 API 호출: $url")
+                
+                val urlObj = URL(url)
+                val connection = urlObj.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+
+                val responseCode = connection.responseCode
+                var responseMessage = ""
+                
+                try {
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        responseMessage = connection.inputStream.bufferedReader().use { it.readText() }
+                        Log.d(TAG, "디바이스 등록 성공: $responseMessage")
+                    } else {
+                        responseMessage = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "에러 응답 없음"
+                        Log.e(TAG, "디바이스 등록 실패: HTTP $responseCode - $responseMessage")
+                    }
+                } catch (e: Exception) {
+                    responseMessage = "응답 읽기 실패: ${e.message}"
+                    Log.e(TAG, "응답 읽기 실패", e)
+                }
+                
+                connection.disconnect()
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "디바이스 등록 API 호출 실패: ${e.message}")
+            }
+        }.start()
+    }
+
+    private fun createRandomString(length: Int): String {
+        val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return (1..length)
             .map { allowed.random() }
             .joinToString("")
-        Log.d(TAG, "createSecureKey 생성 완료: $result")
-        return result
+    }
+
+    private fun createSecureKey(length: Int): String {
+        val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+        return (1..length)
+            .map { allowed.random() }
+            .joinToString("")
     }
 
     private fun saveSettings() {
         Log.d(TAG, "saveSettings 시작")
         
         try {
-            val input1 = editText1.text.toString()
-            val input2 = editText2.text.toString()
-            var input3 = editText3.text.toString()
-
-            Log.d(TAG, "입력값: input1=$input1, input2=$input2, input3=$input3")
-
-            // 입력 검증
-            if (input1.isEmpty() || input2.isEmpty()) {
-                Log.d(TAG, "입력 검증 실패: 필수 입력값 누락")
-                Toast.makeText(this, "디바이스 ID와 키를 모두 입력해주세요", Toast.LENGTH_LONG).show()
-                return
-            }
-
-            if (input3.isEmpty()) {
-                Log.d(TAG, "input3이 비어있어서 자동 생성")
-                input3 = createSecureKey(32)
-                editText3.setText(input3)
-                Toast.makeText(this, getString(R.string.auto_generated_key, input3), Toast.LENGTH_LONG).show()
-            }
-
             // 배터리 모드 저장
-            val selectedMode = when (batteryModeGroup.checkedRadioButtonId) {
-                R.id.radioNormal -> "normal"
-                R.id.radioPower -> "power"
-                R.id.radioUltra -> "ultra"
+            val selectedBatteryMode = when (batteryModeSpinner.selectedItemPosition) {
+                0 -> "normal"
+                1 -> "power"
+                2 -> "ultra"
                 else -> "normal"
             }
-            Log.d(TAG, "선택된 배터리 모드: $selectedMode")
+            Log.d(TAG, "선택된 배터리 모드: $selectedBatteryMode")
             
-            AppPreferences.saveBatteryMode(this, selectedMode)
-            AppPreferences.saveInputs(this, input1, input2, input3)
-            Log.d(TAG, "설정 저장 완료")
+            AppPreferences.saveBatteryMode(this, selectedBatteryMode)
             
-            Toast.makeText(this, getString(R.string.settings_saved), Toast.LENGTH_SHORT).show()
-            updateCurrentSettings()
-
             // 위치 추적 제어 처리
-            val trackingAction = when (trackingControlGroup.checkedRadioButtonId) {
-                R.id.radioTrackingNormal -> "resume"
-                R.id.radioPause5 -> "pause5"
-                R.id.radioPause10 -> "pause10"
-                R.id.radioPause30 -> "pause30"
-                R.id.radioStop -> "stop"
-                else -> "unknown"
-            }
-            Log.d(TAG, "위치 추적 제어 액션: $trackingAction")
-
-            when (trackingControlGroup.checkedRadioButtonId) {
-                R.id.radioTrackingNormal -> {
+            when (trackingControlSpinner.selectedItemPosition) {
+                0 -> { // 추적 재개
                     Log.d(TAG, "추적 재개 처리")
                     AppPreferences.resumeTracking(this)
-                    // 서비스 시작은 checkPermissions에서 처리
                 }
-                R.id.radioPause5 -> {
+                1 -> { // 5분 일시정지
                     Log.d(TAG, "5분 일시정지 처리")
                     AppPreferences.pauseTracking(this, 5)
                     Toast.makeText(this, getString(R.string.tracking_paused), Toast.LENGTH_SHORT).show()
                 }
-                R.id.radioPause10 -> {
+                2 -> { // 10분 일시정지
                     Log.d(TAG, "10분 일시정지 처리")
                     AppPreferences.pauseTracking(this, 10)
                     Toast.makeText(this, getString(R.string.tracking_paused), Toast.LENGTH_SHORT).show()
                 }
-                R.id.radioPause30 -> {
+                3 -> { // 30분 일시정지
                     Log.d(TAG, "30분 일시정지 처리")
                     AppPreferences.pauseTracking(this, 30)
                     Toast.makeText(this, getString(R.string.tracking_paused), Toast.LENGTH_SHORT).show()
                 }
-                R.id.radioStop -> {
-                    Log.d(TAG, "완전 중지 처리")
-                    AppPreferences.stopTracking(this)
-                    stopLocationService()
-                    Toast.makeText(this, getString(R.string.tracking_stopped), Toast.LENGTH_SHORT).show()
-                }
             }
 
-            // 권한 체크 및 서비스 시작 (완전 중지가 아닌 경우에만)
-            if (trackingControlGroup.checkedRadioButtonId != R.id.radioStop) {
+            // 위치 공유 상태 저장 및 서버 업데이트
+            val newShareStatus = shareStatusSpinner.selectedItemPosition == 0 // 0: 허용, 1: 차단
+            val oldShareStatus = AppPreferences.getShareStatus(this)
+            
+            if (newShareStatus != oldShareStatus) {
+                AppPreferences.saveShareStatus(this, newShareStatus)
+                updateShareStatusOnServer(newShareStatus)
+            }
+
+            Log.d(TAG, "설정 저장 완료")
+            Toast.makeText(this, getString(R.string.settings_saved), Toast.LENGTH_SHORT).show()
+            updateCurrentSettings()
+
+            // 권한 체크 및 서비스 시작 (일시정지가 아닌 경우에만)
+            if (trackingControlSpinner.selectedItemPosition == 0) {
                 Log.d(TAG, "권한 체크 시작")
                 checkPermissions()
             }
@@ -244,29 +293,49 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun initializeBatteryMode() {
-        Log.d(TAG, "initializeBatteryMode 시작")
-        val currentMode = AppPreferences.getBatteryMode(this)
-        val radioButtonId = when (currentMode) {
-            "normal" -> R.id.radioNormal
-            "power" -> R.id.radioPower
-            "ultra" -> R.id.radioUltra
-            else -> R.id.radioNormal
-        }
-        batteryModeGroup.check(radioButtonId)
-        Log.d(TAG, "배터리 모드 초기화: $currentMode -> $radioButtonId")
-    }
+    private fun updateShareStatusOnServer(isAllowed: Boolean) {
+        Thread {
+            try {
+                val deviceId = AppPreferences.getInput1(this)
+                val deviceKey = AppPreferences.getInput2(this)
+                val shareValue = if (isAllowed) "1" else "0"
+                
+                val url = BuildConfig.SERVER_URL + "/api/sharecontrol?device=$deviceId&authorization=$deviceKey&share=$shareValue"
+                Log.d(TAG, "위치 공유 상태 업데이트 API 호출: $url")
+                
+                val urlObj = URL(url)
+                val connection = urlObj.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
 
-    private fun initializeTrackingControls() {
-        Log.d(TAG, "initializeTrackingControls 시작")
-        // 현재 추적 상태에 따라 기본값 설정
-        if (AppPreferences.isTrackingPaused(this)) {
-            trackingControlGroup.check(R.id.radioStop)
-            Log.d(TAG, "추적 일시정지 상태로 설정")
-        } else {
-            trackingControlGroup.check(R.id.radioTrackingNormal)
-            Log.d(TAG, "추적 활성화 상태로 설정")
-        }
+                val responseCode = connection.responseCode
+                var responseMessage = ""
+                
+                try {
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        responseMessage = connection.inputStream.bufferedReader().use { it.readText() }
+                        Log.d(TAG, "위치 공유 상태 업데이트 성공: $responseMessage")
+                        
+                        // UI 업데이트는 메인 스레드에서
+                        runOnUiThread {
+                            Toast.makeText(this, getString(R.string.sharing_status_updated), Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        responseMessage = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "에러 응답 없음"
+                        Log.e(TAG, "위치 공유 상태 업데이트 실패: HTTP $responseCode - $responseMessage")
+                    }
+                } catch (e: Exception) {
+                    responseMessage = "응답 읽기 실패: ${e.message}"
+                    Log.e(TAG, "응답 읽기 실패", e)
+                }
+                
+                connection.disconnect()
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "위치 공유 상태 업데이트 API 호출 실패: ${e.message}")
+            }
+        }.start()
     }
 
     private fun updateCurrentSettings() {
@@ -354,18 +423,6 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun stopLocationService() {
-        Log.d(TAG, "stopLocationService 시작")
-        try {
-            val serviceIntent = Intent(this, LocationService::class.java)
-            stopService(serviceIntent)
-            Log.d(TAG, "위치 서비스 중지 완료")
-            Toast.makeText(this, "위치 추적이 중지되었습니다", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Log.e(TAG, "위치 서비스 중지 실패", e)
-        }
-    }
-
     private fun animateButtonClick(view: View) {
         try {
             val scaleDown = ObjectAnimator.ofFloat(view, "scaleX", 1f, 0.95f)
@@ -390,6 +447,19 @@ class SettingsActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "버튼 애니메이션 실패", e)
         }
+    }
+
+    private fun showResetSharedUrlDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(getString(R.string.reset_shared_url_title))
+        builder.setMessage(getString(R.string.reset_shared_url_message))
+        builder.setPositiveButton(getString(R.string.yes)) { _, _ ->
+            resetSharedUrl()
+        }
+        builder.setNegativeButton(getString(R.string.no)) { _, _ ->
+            // 사용자가 취소한 경우
+        }
+        builder.show()
     }
 
     override fun onRequestPermissionsResult(
