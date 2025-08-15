@@ -297,7 +297,7 @@ object AppPreferences {
     }
     
     // MARK: - Random String Generation
-    private fun createRandomString(length: Int): String {
+    internal fun createRandomString(length: Int): String {
         val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         return (1..length).map { allowed.random() }.joinToString("")
     }

@@ -111,14 +111,14 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "새로운 키가 자동 생성되었습니다", Toast.LENGTH_SHORT).show()
     }
 
-    private fun createRandomString(length: Int): String {
+    internal fun createRandomString(length: Int): String {
         val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         return (1..length)
             .map { allowed.random() }
             .joinToString("")
     }
 
-    private fun createSecureKey(length: Int): String {
+    internal fun createSecureKey(length: Int): String {
         val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
         return (1..length)
             .map { allowed.random() }
