@@ -152,36 +152,26 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun resetSharedUrl() {
-        try {
-            Log.d(TAG, "공유 URL 초기화 시작")
-            
-            // 새로운 키 생성
-            val newDeviceId = createRandomString(16)
-            val newDeviceKey = createRandomString(16)
-            val newPrivateKey = createSecureKey(32)
-            
-            Log.d(TAG, "새 키 생성 완료: deviceId=$newDeviceId, deviceKey=$newDeviceKey")
-            
-            // 새 키 저장
-            AppPreferences.saveInputs(this, newDeviceId, newDeviceKey, newPrivateKey)
-            
-            // 디바이스 등록 API 호출
-            registerNewDevice(newDeviceId, newDeviceKey)
-            
-            Toast.makeText(this, getString(R.string.shared_url_reset), Toast.LENGTH_LONG).show()
-            
-            Log.d(TAG, "공유 URL 초기화 완료")
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "공유 URL 초기화 실패", e)
-            Toast.makeText(this, "초기화 중 오류가 발생했습니다: ${e.message}", Toast.LENGTH_LONG).show()
-        }
+        // 새로운 키 생성
+        val newDeviceId = createRandomString(16)
+        val newDeviceKey = createRandomString(16)
+        val newPrivateKey = createSecureKey(32)
+        val newShareControlKey = createRandomString(16)
+        
+        // 키 저장
+        AppPreferences.saveInputs(this, newDeviceId, newDeviceKey, newPrivateKey)
+        AppPreferences.saveShareControlKey(this, newShareControlKey)
+        
+        // 디바이스 등록 API 호출
+        registerNewDevice(newDeviceId, newDeviceKey, newShareControlKey)
+        
+        Toast.makeText(this, "공유 URL이 초기화되었습니다", Toast.LENGTH_SHORT).show()
     }
 
-    private fun registerNewDevice(deviceId: String, deviceKey: String) {
+    private fun registerNewDevice(deviceId: String, deviceKey: String, shareControlKey: String) {
         Thread {
             try {
-                val url = BuildConfig.SERVER_URL + "/api/device/register?device=$deviceId&authorization=$deviceKey"
+                val url = BuildConfig.SERVER_URL + "/api/device/register?device=$deviceId&authorization=$deviceKey&shareControlKey=$shareControlKey"
                 Log.d(TAG, "디바이스 등록 API 호출: $url")
                 
                 val urlObj = URL(url)
@@ -294,15 +284,21 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateShareStatusOnServer(isAllowed: Boolean) {
+        val deviceId = AppPreferences.getInput1(this)
+        val deviceKey = AppPreferences.getInput2(this)
+        val shareValue = if (isAllowed) "1" else "0"
+        
+        // shareControlKey 가져오기 (없으면 새로 생성)
+        var shareControlKey = AppPreferences.getShareControlKey(this)
+        if (shareControlKey.isEmpty()) {
+            shareControlKey = AppPreferences.generateAndSaveShareControlKey(this)
+        }
+        
+        val url = BuildConfig.SERVER_URL + "/api/sharecontrol?device=$deviceId&authorization=$deviceKey&share=$shareValue&shareControlKey=$shareControlKey"
+        Log.d(TAG, "위치 공유 상태 업데이트 API 호출: $url")
+        
         Thread {
             try {
-                val deviceId = AppPreferences.getInput1(this)
-                val deviceKey = AppPreferences.getInput2(this)
-                val shareValue = if (isAllowed) "1" else "0"
-                
-                val url = BuildConfig.SERVER_URL + "/api/sharecontrol?device=$deviceId&authorization=$deviceKey&share=$shareValue"
-                Log.d(TAG, "위치 공유 상태 업데이트 API 호출: $url")
-                
                 val urlObj = URL(url)
                 val connection = urlObj.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"

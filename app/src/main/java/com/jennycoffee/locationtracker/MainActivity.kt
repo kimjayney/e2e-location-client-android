@@ -99,11 +99,16 @@ class MainActivity : AppCompatActivity() {
         val deviceId = createRandomString(16)
         val deviceKey = createRandomString(16)
         val privateKey = createSecureKey(32)
-
+        val shareControlKey = createRandomString(16)
+        
         // 키 저장
         AppPreferences.saveInputs(this, deviceId, deviceKey, privateKey)
+        AppPreferences.saveShareControlKey(this, shareControlKey)
         
-        Toast.makeText(this, "새로운 키가 자동 생성되었습니다", Toast.LENGTH_LONG).show()
+        // 디바이스 등록 API 호출
+        registerNewDevice(deviceId, deviceKey, shareControlKey)
+        
+        Toast.makeText(this, "새로운 키가 자동 생성되었습니다", Toast.LENGTH_SHORT).show()
     }
 
     private fun createRandomString(length: Int): String {
@@ -208,5 +213,33 @@ class MainActivity : AppCompatActivity() {
                 scaleUpY.start()
             }
         }
+    }
+
+    private fun registerNewDevice(deviceId: String, deviceKey: String, shareControlKey: String) {
+        Thread {
+            try {
+                val url = BuildConfig.WEB_URL + "/api/device/register?device=$deviceId&authorization=$deviceKey&shareControlKey=$shareControlKey"
+                val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+
+                val responseCode = connection.responseCode
+                if (responseCode == 200) {
+                    runOnUiThread {
+                        Toast.makeText(this, "디바이스가 성공적으로 등록되었습니다", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this, "디바이스 등록 실패: $responseCode", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                connection.disconnect()
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, "디바이스 등록 중 오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
     }
 }

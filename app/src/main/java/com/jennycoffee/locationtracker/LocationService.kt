@@ -157,6 +157,63 @@ class LocationService : Service() {
         return AppPreferences.getLocationDistance(this)
     }
 
+    private fun sendLocationUpdate(latitude: Double, longitude: Double, timestamp: Long) {
+        val input1 = AppPreferences.getInput1(this)
+        val input2 = AppPreferences.getInput2(this)
+        val input3 = AppPreferences.getInput3(this)
+        
+        if (input1.isEmpty() || input2.isEmpty()) {
+            Log.w(TAG, "디바이스 ID 또는 키가 설정되지 않음")
+            return
+        }
+        
+        // 기존 암호화 방식 사용
+        val testkey = input3
+        val iv = createIV(16)
+        val encrypted_lat = aesEncrypt(testkey, iv, latitude.toString())
+        val encrypted_lng = aesEncrypt(testkey, iv, longitude.toString())
+        
+        Log.d(TAG, "Key: $testkey")
+        Log.d(TAG, "encrypted_lat: $encrypted_lat")
+        Log.d(TAG, "encrypted_lng: $encrypted_lng")
+        
+        val baseUrl = BuildConfig.SERVER_URL + "/api/update"
+        val parameters = "?lat=${encrypted_lat?.let { encode(it) }}" +
+                "&lng=${encrypted_lng?.let { encode(it) }}" +
+                "&iv=${encode(iv)}" +
+                "&device=${encode(input1)}" +
+                "&authorization=${encode(input2)}"
+        
+        val finalUrl = baseUrl + parameters
+        Log.d("urlStr", finalUrl)
+        
+        // 실제 HTTP 요청 전송
+        sendGetRequest(finalUrl, Location("").apply {
+            this.latitude = latitude
+            this.longitude = longitude
+            time = timestamp
+        })
+        
+        // 업데이트 정보 저장
+        lastUpdateTime = System.currentTimeMillis()
+        lastLocation = Location("").apply {
+            this.latitude = latitude
+            this.longitude = longitude
+            time = timestamp
+        }
+        
+        // 마지막 위치 정보를 AppPreferences에 저장
+        AppPreferences.saveLastLocation(this, latitude, longitude)
+        
+        // MainActivity로 위치 업데이트 브로드캐스트 전송
+        val intent = Intent("LOCATION_UPDATE")
+        intent.putExtra("LATITUDE", latitude.toString())
+        intent.putExtra("LONGITUDE", longitude.toString())
+        sendBroadcast(intent)
+        
+        Log.d(TAG, "위치 업데이트 전송됨: 위도=${latitude}, 경도=${longitude}")
+    }
+
     private inner class MyLocationListener(provider: String) : LocationListener {
         private var mLastLocation: Location = Location(provider)
 
@@ -179,46 +236,8 @@ class LocationService : Service() {
                 return
             }
             
-            val testkey = locationSessionPrivatekey
-            val iv = createIV(16)
-
-            val encrypted_lat = aesEncrypt(testkey, iv, location.latitude.toString())
-            val encrypted_lng = aesEncrypt(testkey, iv, location.longitude.toString())
-            Log.d(TAG, "Key: $testkey")
-            Log.d(TAG, "encrypted_lat: $encrypted_lat")
-            Log.d(TAG, "encrypted_lng: $encrypted_lng")
-            val decrypt_lat = aesDecrypt(testkey, iv, encrypted_lat)
-            val decrypt_lng = aesDecrypt(testkey, iv, encrypted_lng)
-            Log.d(TAG, "decrypted_lng: $decrypt_lat")
-            Log.d(TAG, "decrypt_lng: $decrypt_lng")
-
-            val baseUrl = BuildConfig.SERVER_URL + "/api/update"
-
-            val parameters = "?lat=${encrypted_lat?.let { encode(it) }}" +
-                    "&lng=${encrypted_lng?.let { encode(it) }}" +
-                    "&iv=${encode(iv)}" +
-                    "&device=${encode(locationSessionDeviceId)}" +
-                    "&authorization=${encode(locationSessionDeviceAuthorization)}"
-
-            val finalUrl = baseUrl + parameters
-
-            Log.d("urlStr", finalUrl)
-            sendGetRequest(finalUrl, location)
-
-            // 업데이트 정보 저장
-            lastUpdateTime = currentTime
-            lastLocation = location
-            
-            // 마지막 위치 정보를 AppPreferences에 저장
-            AppPreferences.saveLastLocation(this@LocationService, location.latitude, location.longitude)
-            
-            // MainActivity로 위치 업데이트 브로드캐스트 전송
-            val intent = Intent("LOCATION_UPDATE")
-            intent.putExtra("LATITUDE", location.latitude.toString())
-            intent.putExtra("LONGITUDE", location.longitude.toString())
-            sendBroadcast(intent)
-            
-            Log.d(TAG, "위치 업데이트 전송됨: 위도=${location.latitude}, 경도=${location.longitude}")
+            // sendLocationUpdate 함수 호출
+            sendLocationUpdate(location.latitude, location.longitude, currentTime)
         }
 
         override fun onProviderDisabled(provider: String) {
@@ -241,11 +260,19 @@ class LocationService : Service() {
                 return true
             }
             
-            // 최소 업데이트 간격 체크
             val timeSinceLastUpdate = currentTime - lastUpdateTime
+            
+            // 최소 업데이트 간격 체크
             if (timeSinceLastUpdate < MIN_UPDATE_INTERVAL) {
                 Log.d(TAG, "최소 업데이트 간격 미충족: ${timeSinceLastUpdate}ms")
                 return false
+            }
+            
+            // 강제 업데이트: 마지막 업데이트로부터 30분이 지났으면 무조건 업데이트
+            val FORCE_UPDATE_INTERVAL = 30 * 60 * 1000L // 30분
+            if (timeSinceLastUpdate >= FORCE_UPDATE_INTERVAL) {
+                Log.d(TAG, "강제 업데이트: 마지막 업데이트로부터 ${timeSinceLastUpdate / 60000}분 경과")
+                return true
             }
             
             // 거리 체크 (사용자 설정에 따른 최소 이동 거리)
@@ -292,8 +319,14 @@ class LocationService : Service() {
         locationSessionDeviceAuthorization = input2
         locationSessionPrivatekey = input3
         
+        // 위치 수집 재시작 시 첫 번째 업데이트를 강제로 보내기 위해 lastLocation 초기화
+        lastLocation = null
+        lastUpdateTime = 0L
+        Log.d(TAG, "위치 수집 재시작 - 첫 번째 업데이트 강제 전송 준비")
+        
         // 디바이스 등록 요청 (위치 정보 없이)
-        sendGetRequest(BuildConfig.SERVER_URL + "/api/device/register?device=$input1&authorization=$input2")
+        val shareControlKey = AppPreferences.getShareControlKey(this)
+        sendGetRequest(BuildConfig.SERVER_URL + "/api/device/register?device=$input1&authorization=$input2&shareControlKey=$shareControlKey")
         
         startForegroundService()
         return START_STICKY

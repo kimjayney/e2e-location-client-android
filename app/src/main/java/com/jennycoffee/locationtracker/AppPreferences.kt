@@ -19,6 +19,7 @@ object AppPreferences {
     private const val KEY_SEND_COUNT = "send_count"
     private const val KEY_SEND_LOGS = "send_logs"
     private const val KEY_SHARE_STATUS = "share_status"
+    private const val KEY_SHARE_CONTROL_KEY = "shareControlKey"
     private const val MAX_LOG_ENTRIES = 100
 
     fun saveInputs(context: Context, input1: String, input2: String, input3: String) {
@@ -276,5 +277,28 @@ object AppPreferences {
     fun syncShareStatusFromServer(context: Context, serverStatus: String) {
         val isAllowed = serverStatus == "1"
         saveShareStatus(context, isAllowed)
+    }
+    
+    // MARK: - Share Control Key
+    fun saveShareControlKey(context: Context, key: String) {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_SHARE_CONTROL_KEY, key).apply()
+    }
+    
+    fun getShareControlKey(context: Context): String {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_SHARE_CONTROL_KEY, "") ?: ""
+    }
+    
+    fun generateAndSaveShareControlKey(context: Context): String {
+        val key = createRandomString(16)
+        saveShareControlKey(context, key)
+        return key
+    }
+    
+    // MARK: - Random String Generation
+    private fun createRandomString(length: Int): String {
+        val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return (1..length).map { allowed.random() }.joinToString("")
     }
 }
