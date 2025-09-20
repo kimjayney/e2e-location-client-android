@@ -21,6 +21,7 @@ object AppPreferences {
     private const val KEY_SHARE_STATUS = "share_status"
     private const val KEY_SHARE_CONTROL_KEY = "shareControlKey"
     private const val MAX_LOG_ENTRIES = 100
+    private const val KEY_FIRST_RUN = "first_run"
 
     fun saveInputs(context: Context, input1: String, input2: String, input3: String) {
         android.util.Log.d("AppPreferences", "saveInputs 시작: input1=$input1, input2=$input2, input3=$input3")
@@ -153,12 +154,23 @@ object AppPreferences {
 
     fun isTrackingPaused(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        // 앱 최초 실행 시 기본값은 true (중지 상태)
+        val isStopped = prefs.getBoolean(KEY_TRACKING_STOPPED, true)
         val pauseUntil = prefs.getLong(KEY_TRACKING_PAUSED_UNTIL, 0L)
-        val isStopped = prefs.getBoolean(KEY_TRACKING_STOPPED, false)
         
         if (isStopped) return true
         if (pauseUntil > 0 && System.currentTimeMillis() < pauseUntil) return true
         return false
+    }
+
+    fun initialize(context: Context) {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_FIRST_RUN, true)) {
+            prefs.edit()
+                .putBoolean(KEY_TRACKING_STOPPED, true) // 최초 실행 시 추적 중지 상태로 설정
+                .putBoolean(KEY_FIRST_RUN, false)
+                .apply()
+        }
     }
 
     fun isTrackingActive(context: Context): Boolean {

@@ -14,13 +14,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import android.widget.Toast
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
-import com.jennycoffee.locationtracker.BuildConfig
-import org.json.JSONObject
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -107,6 +102,8 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         Log.d(TAG, "onCreate 완료")
+
+        checkAndGenerateKeysIfNeeded()
     }
 
     private fun initializeSpinners() {
@@ -137,6 +134,30 @@ class SettingsActivity : AppCompatActivity() {
         shareStatusSpinner.setSelection(if (currentShareStatus) 0 else 1)
     }
 
+    private fun checkAndGenerateKeysIfNeeded() {
+        val deviceId = AppPreferences.getInput1(this)
+        val deviceKey = AppPreferences.getInput2(this)
+
+        if (deviceId.isEmpty() || deviceKey.isEmpty()) {
+            showInitialSetupDialog()
+        }
+    }
+
+    private fun showInitialSetupDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("초기 설정 필요")
+            .setMessage("위치 추적을 시작하기 위해 초기 설정이 필요합니다. 디바이스 ID와 키를 생성하고 서버에 등록합니다.")
+            .setPositiveButton("설정 시작") { _, _ ->
+                resetSharedUrl()
+            }
+            .setNegativeButton("취소") { dialog, _ ->
+                dialog.dismiss()
+                Toast.makeText(this, "초기 설정이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
     private fun resetSharedUrl() {
         // 새로운 키 생성
         val newDeviceId = createRandomString(16)
@@ -149,61 +170,9 @@ class SettingsActivity : AppCompatActivity() {
         AppPreferences.saveShareControlKey(this, newShareControlKey)
         
         // 디바이스 등록 API 호출
-        registerNewDevice(newDeviceId, newDeviceKey, newShareControlKey)
+        DeviceRegistration.registerNewDevice(this, newDeviceId, newDeviceKey, newShareControlKey)
         
         Toast.makeText(this, "공유 URL이 초기화되었습니다", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun registerNewDevice(deviceId: String, deviceKey: String, shareControlKey: String) {
-        Thread {
-            try {
-                val url = BuildConfig.SERVER_URL + "/api/device/register?device=$deviceId&authorization=$deviceKey&shareControlKey=$shareControlKey"
-                Log.d(TAG, "디바이스 등록 API 호출: $url")
-                
-                val urlObj = URL(url)
-                val connection = urlObj.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000
-
-                val responseCode = connection.responseCode
-                val responseBody = if (responseCode == HttpURLConnection.HTTP_OK) {
-                    connection.inputStream.bufferedReader().use { it.readText() }
-                } else {
-                    connection.errorStream?.bufferedReader()?.use { it.readText() }
-                }
-
-                runOnUiThread {
-                    if (responseCode == HttpURLConnection.HTTP_OK && responseBody != null) {
-                        try {
-                            val jsonResponse = JSONObject(responseBody)
-                            val status = jsonResponse.optBoolean("status", false)
-                            val message = jsonResponse.optString("message_ko_KR", "알 수 없는 응답")
-
-                            if (status) { // 새로운 기기 등록 성공
-                                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-                                // 웹 브라우저 열기
-                                val recapthaUrl = "${BuildConfig.WEB_URL}/recaptha?deviceId=$deviceId&authorization=$deviceKey&shareControlKey=$shareControlKey"
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(recapthaUrl))
-                                startActivity(intent)
-                            } else { // 이미 등록된 기기
-                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                            }
-                        } catch (e: org.json.JSONException) {
-                            Toast.makeText(this, "응답 처리 중 오류 발생", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        Toast.makeText(this, "디바이스 등록 실패: $responseCode", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                connection.disconnect()
-            } catch (e: Exception) {
-                Log.e(TAG, "디바이스 등록 API 호출 실패: ${e.message}")
-                runOnUiThread {
-                    Toast.makeText(this, "디바이스 등록 중 오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }.start()
     }
 
     internal fun createRandomString(length: Int): String {
@@ -247,10 +216,6 @@ class SettingsActivity : AppCompatActivity() {
             Log.d(TAG, "설정 저장 완료")
             Toast.makeText(this, getString(R.string.settings_saved), Toast.LENGTH_SHORT).show()
             updateCurrentSettings()
-
-            // 추적 재개 및 권한 확인
-            AppPreferences.resumeTracking(this)
-            checkPermissions()
 
             Log.d(TAG, "saveSettings 완료")
             
@@ -336,38 +301,59 @@ class SettingsActivity : AppCompatActivity() {
     private fun checkPermissions() {
         Log.d(TAG, "checkPermissions 시작")
         try {
-            val input1 = AppPreferences.getInput1(this)
-            val input2 = AppPreferences.getInput2(this)
-
-            if (input1.isEmpty() || input2.isEmpty()) {
-                Log.d(TAG, "설정이 완료되지 않아 위치 추적을 시작하지 않습니다")
-                return
-            }
-
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.d(TAG, "위치 권한 요청")
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ),
-                    LOCATION_PERMISSION_REQUEST_CODE
-                )
-            } else {
-                Log.d(TAG, "위치 권한이 이미 부여됨, 서비스 시작")
-                startLocationService()
-            }
+            // 백그라운드 위치 정보 사용에 대한 동의 팝업 표시
+            showBackgroundLocationConsentDialog()
         } catch (e: Exception) {
             Log.e(TAG, "권한 체크 중 예외 발생", e)
+        }
+    }
+
+    private fun showBackgroundLocationConsentDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("백그라운드 위치 정보 사용 안내")
+            .setMessage("이 앱은 화면이 꺼져있거나 다른 앱을 사용하는 중에도 실시간으로 위치를 추적하고 공유하기 위해 백그라운드에서 사용자의 위치 데이터를 수집합니다. 이 기능을 사용하려면 '항상 허용'으로 위치 권한을 설정하고 알림 권한을 허용해야 합니다.\n\n동의하십니까?")
+            .setPositiveButton("동의 및 계속하기") { _, _ ->
+                requestPermissions()
+            }
+            .setNegativeButton("취소") { dialog, _ ->
+                dialog.dismiss()
+                Toast.makeText(this, "권한에 동의해야 위치 추적을 시작할 수 있습니다.", Toast.LENGTH_LONG).show()
+            }
+            .show()
+    }
+
+    private fun requestPermissions() {
+        val input1 = AppPreferences.getInput1(this)
+        val input2 = AppPreferences.getInput2(this)
+
+        if (input1.isEmpty() || input2.isEmpty()) {
+            Log.d(TAG, "설정이 완료되지 않아 위치 추적을 시작하지 않습니다")
+            return
+        }
+
+        val requiredPermissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requiredPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        val permissionsToRequest = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            Log.d(TAG, "필요한 권한 요청: $permissionsToRequest")
+            ActivityCompat.requestPermissions(
+                this,
+                permissionsToRequest.toTypedArray(),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            Log.d(TAG, "모든 권한이 이미 부여됨, 서비스 시작")
+            startLocationService()
         }
     }
 
@@ -445,12 +431,29 @@ class SettingsActivity : AppCompatActivity() {
         
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "위치 권한 허용됨, 서비스 시작")
+                Log.d(TAG, "권한 허용됨")
+                // 백그라운드 위치 권한 추가 요청 (Android 10 이상)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        AlertDialog.Builder(this)
+                            .setTitle("백그라운드 위치 권한 필요")
+                            .setMessage("정확한 위치 추적을 위해, 다음 화면에서 위치 권한을 '항상 허용'으로 설정해주세요.")
+                            .setPositiveButton("설정으로 이동") { _, _ -> requestBackgroundLocationPermission() }
+                            .show()
+                    }
+                }
                 startLocationService()
             } else {
                 Log.d(TAG, "위치 권한 거부됨")
                 Toast.makeText(this, getString(R.string.permission_required), Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    private fun requestBackgroundLocationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
+            startActivity(intent)
         }
     }
 

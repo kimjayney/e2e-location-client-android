@@ -1,66 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GPS 위치 추적기</string>
-    <string name="app_title">실시간 위치 추적기</string>
-    <string name="app_description">실시간 위치 추적 및 모니터링 앱</string>
-    <string name="start_tracking">위치 추적 시작</string>
-    <string name="stop_tracking_main">위치 추적 중지</string>
-    <string name="share_location">다른 사람에게 공유하기</string>
-    <string name="device_id_hint">디바이스 ID를 입력하세요</string>
-    <string name="device_key_hint">디바이스 키를 입력하세요</string>
-    <string name="private_key_hint">개인 키 (자동 생성됨)</string>
-    <string name="save_button">설정 저장</string>
-    <string name="view_web_button">웹에서 위치 확인</string>
-    <string name="location_status">위치 추적 상태</string>
-    <string name="tracking_status">위치 추적 상태</string>
-    <string name="last_location_info">마지막 위치 정보</string>
-    <string name="tracking_active">위치 추적 중...</string>
-    <string name="tracking_inactive">위치 추적 비활성화</string>
-    <string name="permission_required">위치 권한이 필요합니다</string>
-    <string name="settings_saved">설정이 저장되었습니다</string>
-    <string name="auto_generated_key">자동 생성된 키: %s</string>
-    <string name="reset_shared_url">공유 URL 초기화</string>
-    <string name="shared_url_reset">공유 URL이 초기화되었습니다</string>
-    <string name="reset_shared_url_title">공유 URL 초기화</string>
-    <string name="reset_shared_url_message">이 버튼은 기존 URL로 더이상 수집이 되지 않는 것을 의미 합니다. 진행 할까요?</string>
-    <string name="yes">예</string>
-    <string name="no">아니오</string>
-    <string name="setup_guide">사용법</string>
-    <string name="setup_step1">1. 디바이스 ID와 키를 입력하세요</string>
-    <string name="setup_step2">2. 설정 저장 버튼을 누르세요</string>
-    <string name="setup_step3">3. 위치 권한을 허용하세요</string>
-    <string name="setup_step4">4. 앱이 백그라운드에서 위치를 추적합니다</string>
-    <string name="setup_step5">5. 웹에서 위치 확인 버튼으로 실시간 위치를 확인하세요</string>
-    
-    <!-- 배터리 절약 설정 -->
-    <string name="battery_settings">배터리 절약 설정</string>
-    <string name="update_interval">업데이트 간격</string>
-    <string name="update_distance">최소 이동 거리</string>
-    <string name="battery_saving_mode">배터리 절약 모드</string>
-    <string name="normal_mode">일반 모드</string>
-    <string name="power_saving_mode">절약 모드</string>
-    <string name="ultra_saving_mode">초절약 모드</string>
-    <string name="current_settings">현재 설정: %1$s 간격, %2$s 거리</string>
-    
-    <string name="location_sharing_settings">위치 공유 설정</string>
-    <string name="sharing_allowed">위치 공유 허용</string>
-    <string name="sharing_blocked">위치 공유 차단</string>
-    <string name="sharing_status_updated">위치 공유 상태가 업데이트되었습니다</string>
-    
+    <string name="app_name">GPS Location Tracker</string>
+    <string name="app_title">Real-time Location Tracker</string>
+    <string name="app_description">Real-time location tracking and monitoring app</string>
+    <string name="start_tracking">Start Tracking</string>
+    <string name="stop_tracking_main">Stop Tracking</string>
+    <string name="share_location">Share with Others</string>
+    <string name="device_id_hint">Enter Device ID</string>
+    <string name="device_key_hint">Enter Device Key</string>
+    <string name="private_key_hint">Private Key (Auto-generated)</string>
+    <string name="save_button">Save Settings</string>
+    <string name="view_web_button">View Location on Web</string>
+    <string name="location_status">Location Tracking Status</string>
+    <string name="tracking_status">Tracking Status</string>
+    <string name="last_location_info">Last Location Information</string>
+    <string name="tracking_active">Location tracking active…</string>
+    <string name="tracking_inactive">Location tracking inactive</string>
+    <string name="permission_required">Location permission is required</string>
+    <string name="settings_saved">Settings have been saved</string>
+    <string name="auto_generated_key">Auto-generated key: %s</string>
+    <string name="reset_shared_url">Reset Share URL</string>
+    <string name="shared_url_reset">Share URL has been reset</string>
+    <string name="reset_shared_url_title">Reset Share URL</string>
+    <string name="reset_shared_url_message">This means that data will no longer be collected with the existing URL. Do you want to proceed?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="setup_guide">How to Use</string>
+    <string name="setup_step1">1. Enter Device ID and Key</string>
+    <string name="setup_step2">2. Press Save Settings button</string>
+    <string name="setup_step3">3. Allow location permission</string>
+    <string name="setup_step4">4. App will track location in background</string>
+    <string name="setup_step5">5. Use View Location on Web button to check real-time location</string>
+
+    <!-- Battery saving settings -->
+    <string name="battery_settings">Battery Saving Settings</string>
+    <string name="update_interval">Update Interval</string>
+    <string name="update_distance">Minimum Distance</string>
+    <string name="battery_saving_mode">Battery Saving Mode</string>
+    <string name="normal_mode">Normal Mode</string>
+    <string name="power_saving_mode">Power Saving Mode</string>
+    <string name="ultra_saving_mode">Ultra Saving Mode</string>
+    <string name="current_settings">Current Settings: %1$s interval, %2$s distance</string>
+
+    <string name="location_sharing_settings">Location Sharing Settings</string>
+    <string name="sharing_allowed">Allow Location Sharing</string>
+    <string name="sharing_blocked">Block Location Sharing</string>
+    <string name="sharing_status_updated">Location sharing status has been updated</string>
+
     <!-- 언어 설정 -->
-    <string name="language_settings">언어 설정</string>
+    <string name="language_settings">Language Settings</string>
     <string name="korean">한국어</string>
     <string name="english">English</string>
-    
+    <string name="back_to_main">Back to Main</string>
+
     <!-- 초기 설정 안내 -->
-    <string name="setup_required">설정이 필요합니다</string>
-    <string name="setup_complete">설정 완료</string>
-    <string name="setup_incomplete">디바이스 ID와 키를 입력해주세요</string>
-    <string name="setup_guide_title">처음 사용하시나요?</string>
-    <string name="setup_guide_subtitle">아래 단계를 따라 설정을 완료해주세요</string>
-    <string name="step_1_title">1단계: 디바이스 정보 입력</string>
-    <string name="step_1_desc">디바이스 ID와 키를 입력하고 설정 저장을 눌러주세요</string>
-    <string name="step_2_title">2단계: 위치 권한 허용</string>
-    <string name="step_2_desc">위치 추적을 위해 권한을 허용해주세요</string>
-    <string name="step_3_title">3단계: 추적 시작</string>
-    <string name="step_3_desc">설정 저장 후 자동으로 위치 추적이 시작됩니다</string>
+    <string name="setup_required">Setup Required</string>
+    <string name="setup_complete">Setup Complete</string>
+    <string name="setup_incomplete">Please enter Device ID and Key</string>
+    <string name="setup_guide_title">First time user?</string>
+    <string name="setup_guide_subtitle">Please complete the setup by following the steps below</string>
+    <string name="step_1_title">Step 1: Enter Device Information</string>
+    <string name="step_1_desc">Enter Device ID and Key, then press Save Settings</string>
+    <string name="step_2_title">Step 2: Allow Location Permission</string>
+    <string name="step_2_desc">Allow permission for location tracking</string>
+    <string name="step_3_title">Step 3: Start Tracking</string>
+    <string name="step_3_desc">Location tracking will start automatically after saving settings</string>
 </resources>

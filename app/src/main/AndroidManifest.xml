@@ -39,9 +39,16 @@
         <!-- 메인 액티비티 -->
         <activity
             android:name=".MainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.LocationTracker"
-            android:screenOrientation="portrait" />
+            android:exported="true"
+            android:theme="@style/Theme.LocationTracker" >
+            <!-- 웹에서 앱을 열기 위한 인텐트 필터 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="e2elocation" android:host="main" />
+            </intent-filter>
+        </activity>
 
         <!-- 설정 액티비티 -->
         <activity
