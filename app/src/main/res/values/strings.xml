@@ -41,20 +41,6 @@
     <string name="ultra_saving_mode">초절약 모드</string>
     <string name="current_settings">현재 설정: %1$s 간격, %2$s 거리</string>
     
-    <!-- 위치 추적 제어 -->
-    <string name="tracking_control">위치 추적 제어</string>
-    <string name="pause_tracking">추적 일시정지</string>
-    <string name="resume_tracking">추적 재개</string>
-    <string name="pause_5min">5분 동안 일시정지</string>
-    <string name="pause_10min">10분 동안 일시정지</string>
-    <string name="pause_30min">30분 동안 일시정지</string>
-    <string name="stop_tracking">추적 완전 중지</string>
-    <string name="tracking_paused">위치 추적이 일시정지되었습니다</string>
-    <string name="tracking_resumed">위치 추적이 재개되었습니다</string>
-    <string name="tracking_stopped">위치 추적이 중지되었습니다</string>
-    <string name="pause_until">일시정지: %s까지</string>
-    <string name="pause_duration">일시정지: %d분 남음</string>
-    <string name="execute_action">실행</string>
     <string name="location_sharing_settings">위치 공유 설정</string>
     <string name="sharing_allowed">위치 공유 허용</string>
     <string name="sharing_blocked">위치 공유 차단</string>

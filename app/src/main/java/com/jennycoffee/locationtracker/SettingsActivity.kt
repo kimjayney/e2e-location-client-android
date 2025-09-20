@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -30,7 +31,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonBack: Button
     private lateinit var buttonResetSharedUrl: Button
     private lateinit var batteryModeSpinner: Spinner
-    private lateinit var trackingControlSpinner: Spinner
     private lateinit var shareStatusSpinner: Spinner
     private lateinit var currentSettingsText: TextView
 
@@ -54,7 +54,6 @@ class SettingsActivity : AppCompatActivity() {
             buttonBack = findViewById(R.id.buttonBack)
             buttonResetSharedUrl = findViewById(R.id.buttonResetSharedUrl)
             batteryModeSpinner = findViewById(R.id.batteryModeSpinner)
-            trackingControlSpinner = findViewById(R.id.trackingControlSpinner)
             shareStatusSpinner = findViewById(R.id.shareStatusSpinner)
             currentSettingsText = findViewById(R.id.currentSettingsText)
             Log.d(TAG, "UI 요소 초기화 완료")
@@ -127,19 +126,6 @@ class SettingsActivity : AppCompatActivity() {
         }
         batteryModeSpinner.setSelection(batteryModeIndex)
 
-        // 위치 추적 제어 Spinner 초기화
-        val trackingControls = arrayOf("추적 재개", "5분 동안 일시정지", "10분 동안 일시정지", "30분 동안 일시정지")
-        val trackingAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, trackingControls)
-        trackingAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        trackingControlSpinner.adapter = trackingAdapter
-
-        // 현재 추적 상태 설정
-        if (AppPreferences.isTrackingPaused(this)) {
-            trackingControlSpinner.setSelection(1) // 기본값으로 5분 일시정지
-        } else {
-            trackingControlSpinner.setSelection(0) // 추적 재개
-        }
-
         // 위치 공유 상태 Spinner 초기화
         val shareStatuses = arrayOf("위치 공유 허용", "위치 공유 차단")
         val shareAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, shareStatuses)
@@ -181,25 +167,41 @@ class SettingsActivity : AppCompatActivity() {
                 connection.readTimeout = 10000
 
                 val responseCode = connection.responseCode
-                var responseMessage = ""
-                
-                try {
-                    if (responseCode == HttpURLConnection.HTTP_OK) {
-                        responseMessage = connection.inputStream.bufferedReader().use { it.readText() }
-                        Log.d(TAG, "디바이스 등록 성공: $responseMessage")
-                    } else {
-                        responseMessage = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "에러 응답 없음"
-                        Log.e(TAG, "디바이스 등록 실패: HTTP $responseCode - $responseMessage")
-                    }
-                } catch (e: Exception) {
-                    responseMessage = "응답 읽기 실패: ${e.message}"
-                    Log.e(TAG, "응답 읽기 실패", e)
+                val responseBody = if (responseCode == HttpURLConnection.HTTP_OK) {
+                    connection.inputStream.bufferedReader().use { it.readText() }
+                } else {
+                    connection.errorStream?.bufferedReader()?.use { it.readText() }
                 }
-                
+
+                runOnUiThread {
+                    if (responseCode == HttpURLConnection.HTTP_OK && responseBody != null) {
+                        try {
+                            val jsonResponse = JSONObject(responseBody)
+                            val status = jsonResponse.optBoolean("status", false)
+                            val message = jsonResponse.optString("message_ko_KR", "알 수 없는 응답")
+
+                            if (status) { // 새로운 기기 등록 성공
+                                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                                // 웹 브라우저 열기
+                                val recapthaUrl = "${BuildConfig.WEB_URL}/recaptha?deviceId=$deviceId&authorization=$deviceKey&shareControlKey=$shareControlKey"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(recapthaUrl))
+                                startActivity(intent)
+                            } else { // 이미 등록된 기기
+                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: org.json.JSONException) {
+                            Toast.makeText(this, "응답 처리 중 오류 발생", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this, "디바이스 등록 실패: $responseCode", Toast.LENGTH_SHORT).show()
+                    }
+                }
                 connection.disconnect()
-                
             } catch (e: Exception) {
                 Log.e(TAG, "디바이스 등록 API 호출 실패: ${e.message}")
+                runOnUiThread {
+                    Toast.makeText(this, "디바이스 등록 중 오류 발생: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }.start()
     }
@@ -233,29 +235,6 @@ class SettingsActivity : AppCompatActivity() {
             
             AppPreferences.saveBatteryMode(this, selectedBatteryMode)
             
-            // 위치 추적 제어 처리
-            when (trackingControlSpinner.selectedItemPosition) {
-                0 -> { // 추적 재개
-                    Log.d(TAG, "추적 재개 처리")
-                    AppPreferences.resumeTracking(this)
-                }
-                1 -> { // 5분 일시정지
-                    Log.d(TAG, "5분 일시정지 처리")
-                    AppPreferences.pauseTracking(this, 5)
-                    Toast.makeText(this, getString(R.string.tracking_paused), Toast.LENGTH_SHORT).show()
-                }
-                2 -> { // 10분 일시정지
-                    Log.d(TAG, "10분 일시정지 처리")
-                    AppPreferences.pauseTracking(this, 10)
-                    Toast.makeText(this, getString(R.string.tracking_paused), Toast.LENGTH_SHORT).show()
-                }
-                3 -> { // 30분 일시정지
-                    Log.d(TAG, "30분 일시정지 처리")
-                    AppPreferences.pauseTracking(this, 30)
-                    Toast.makeText(this, getString(R.string.tracking_paused), Toast.LENGTH_SHORT).show()
-                }
-            }
-
             // 위치 공유 상태 저장 및 서버 업데이트
             val newShareStatus = shareStatusSpinner.selectedItemPosition == 0 // 0: 허용, 1: 차단
             val oldShareStatus = AppPreferences.getShareStatus(this)
@@ -269,11 +248,9 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, getString(R.string.settings_saved), Toast.LENGTH_SHORT).show()
             updateCurrentSettings()
 
-            // 권한 체크 및 서비스 시작 (일시정지가 아닌 경우에만)
-            if (trackingControlSpinner.selectedItemPosition == 0) {
-                Log.d(TAG, "권한 체크 시작")
-                checkPermissions()
-            }
+            // 추적 재개 및 권한 확인
+            AppPreferences.resumeTracking(this)
+            checkPermissions()
 
             Log.d(TAG, "saveSettings 완료")
             

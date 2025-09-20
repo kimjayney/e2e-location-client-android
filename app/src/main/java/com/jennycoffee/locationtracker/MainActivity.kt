@@ -161,7 +161,12 @@ class MainActivity : AppCompatActivity() {
             Base64.NO_WRAP
         )
 
-        val url = BuildConfig.WEB_URL + "#locationui?deviceId=$id&deviceKey=$deviceKey&privateKey=$encodedPrivateKey&base64=true"
+        // 현재 시간대 오프셋을 시간 단위로 계산
+        val timezoneOffsetInMillis = java.util.TimeZone.getDefault().rawOffset
+        val timezoneOffsetInHours = timezoneOffsetInMillis / (1000 * 60 * 60)
+
+        val url = "${BuildConfig.WEB_URL}#locationui?deviceId=$id&deviceKey=$deviceKey&privateKey=$encodedPrivateKey&base64=true&timezone=$timezoneOffsetInHours"
+
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         startActivity(intent)
     }
@@ -225,12 +230,32 @@ class MainActivity : AppCompatActivity() {
                 connection.readTimeout = 10000
 
                 val responseCode = connection.responseCode
-                if (responseCode == 200) {
-                    runOnUiThread {
-                        Toast.makeText(this, "디바이스가 성공적으로 등록되었습니다", Toast.LENGTH_SHORT).show()
-                    }
+                val responseBody = if (responseCode == 200) {
+                    connection.inputStream.bufferedReader().use { it.readText() }
                 } else {
-                    runOnUiThread {
+                    connection.errorStream?.bufferedReader()?.use { it.readText() }
+                }
+
+                runOnUiThread {
+                    if (responseCode == 200 && responseBody != null) {
+                        try {
+                            val jsonResponse = org.json.JSONObject(responseBody)
+                            val status = jsonResponse.optBoolean("status", false)
+                            val message = jsonResponse.optString("message_ko_KR", "알 수 없는 응답")
+
+                            if (status) { // 새로운 기기 등록 성공
+                                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                                // 웹 브라우저 열기
+                                val recapthaUrl = "${BuildConfig.WEB_URL}/recaptha?deviceid=$deviceId&authorization=$deviceKey&shareControlKey=$shareControlKey"
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(recapthaUrl))
+                                startActivity(intent)
+                            } else { // 이미 등록된 기기
+                                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: org.json.JSONException) {
+                            Toast.makeText(this, "응답 처리 중 오류 발생", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
                         Toast.makeText(this, "디바이스 등록 실패: $responseCode", Toast.LENGTH_SHORT).show()
                     }
                 }
