@@ -15,9 +15,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.jennycoffee.locationtracker.BuildConfig
 import android.util.Base64
 import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.nio.charset.StandardCharsets
 
 class MainActivity : AppCompatActivity() {
@@ -69,6 +73,9 @@ class MainActivity : AppCompatActivity() {
 
         // 앱 시작 시 키 확인 및 생성
         checkAndGenerateKeysIfNeeded()
+
+        // 앱 시작 시 FCM 토큰 미리 가져오기
+        prefetchFcmToken()
     }
 
     override fun onResume() {
@@ -94,6 +101,20 @@ class MainActivity : AppCompatActivity() {
 
             // 위치 추적 시작 전, 권한 확인 및 동의 절차
             checkPermissions()
+        }
+    }
+
+    private fun prefetchFcmToken() {
+        lifecycleScope.launch {
+            try {
+                val token = FirebaseMessaging.getInstance().token.await()
+                if (!token.isNullOrEmpty()) {
+                    AppPreferences.saveFcmToken(this@MainActivity, token)
+                    Log.d(TAG, "FCM Token prefetched and saved.")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to prefetch FCM token", e)
+            }
         }
     }
 

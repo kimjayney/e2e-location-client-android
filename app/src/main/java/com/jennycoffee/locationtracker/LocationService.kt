@@ -268,8 +268,8 @@ class LocationService : Service() {
                 return false
             }
             
-            // 강제 업데이트: 마지막 업데이트로부터 30분이 지났으면 무조건 업데이트
-            val FORCE_UPDATE_INTERVAL = 30 * 60 * 1000L // 30분
+            // 강제 업데이트: 마지막 업데이트로부터 60분이 지났으면 무조건 업데이트
+            val FORCE_UPDATE_INTERVAL = 60 * 60 * 1000L // 60분
             if (timeSinceLastUpdate >= FORCE_UPDATE_INTERVAL) {
                 Log.d(TAG, "강제 업데이트: 마지막 업데이트로부터 ${timeSinceLastUpdate / 60000}분 경과")
                 return true

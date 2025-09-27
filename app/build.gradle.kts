@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 import java.util.Properties
@@ -97,6 +98,11 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("com.google.android.material:material:1.12.0") // Material 2 라이브러리 추가
     implementation(libs.androidx.appcompat)
+
+    // Firebase (BOM - Bill of Materials)
+    implementation(platform("com.google.firebase:firebase-bom:33.1.1"))
+    // Firebase Cloud Messaging
+    implementation("com.google.firebase:firebase-messaging-ktx")
     
     // Testing dependencies
     testImplementation(libs.junit)
@@ -110,4 +116,18 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // QR 코드 스캐너 (ZXing)
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+
+    // 코루틴
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2") // lifecycleScope 사용
+
+    // ViewModel and LiveData
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.2")
+    implementation("androidx.activity:activity-ktx:1.9.0") // by viewModels() 사용
 }

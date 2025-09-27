@@ -20,6 +20,8 @@ object AppPreferences {
     private const val KEY_SEND_LOGS = "send_logs"
     private const val KEY_SHARE_STATUS = "share_status"
     private const val KEY_SHARE_CONTROL_KEY = "shareControlKey"
+    private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
+    private const val KEY_FCM_TOKEN = "fcm_token"
     private const val MAX_LOG_ENTRIES = 100
     private const val KEY_FIRST_RUN = "first_run"
 
@@ -312,5 +314,29 @@ object AppPreferences {
     internal fun createRandomString(length: Int): String {
         val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         return (1..length).map { allowed.random() }.joinToString("")
+    }
+
+    // 알림 설정
+    fun saveNotificationsEnabled(context: Context, isEnabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, isEnabled).apply()
+    }
+
+    fun getNotificationsEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        // 기본값은 false (차단)
+        return prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, false)
+    }
+
+    // FCM 토큰 저장
+    fun saveFcmToken(context: Context, token: String) {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_FCM_TOKEN, token).apply()
+    }
+
+    // FCM 토큰 조회
+    fun getFcmToken(context: Context): String {
+        val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_FCM_TOKEN, "") ?: ""
     }
 }

@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.*
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -26,8 +27,13 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var buttonBack: Button
     private lateinit var buttonResetSharedUrl: Button
     private lateinit var batteryModeSpinner: Spinner
+    private lateinit var notificationSwitch: Switch
+    private lateinit var buttonManagePush: Button
     private lateinit var shareStatusSpinner: Spinner
     private lateinit var currentSettingsText: TextView
+
+    // ViewModel 인스턴스 생성
+    private val viewModel: SettingsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +55,8 @@ class SettingsActivity : AppCompatActivity() {
             buttonBack = findViewById(R.id.buttonBack)
             buttonResetSharedUrl = findViewById(R.id.buttonResetSharedUrl)
             batteryModeSpinner = findViewById(R.id.batteryModeSpinner)
+            notificationSwitch = findViewById(R.id.notificationSwitch)
+            buttonManagePush = findViewById(R.id.buttonManagePush)
             shareStatusSpinner = findViewById(R.id.shareStatusSpinner)
             currentSettingsText = findViewById(R.id.currentSettingsText)
             Log.d(TAG, "UI 요소 초기화 완료")
@@ -62,6 +70,7 @@ class SettingsActivity : AppCompatActivity() {
         try {
             // Spinner 초기화
             initializeSpinners()
+            initializeSwitch()
             Log.d(TAG, "Spinner 초기화 완료")
         } catch (e: Exception) {
             Log.e(TAG, "Spinner 초기화 실패", e)
@@ -96,6 +105,13 @@ class SettingsActivity : AppCompatActivity() {
                 animateButtonClick(view)
                 finish()
             }
+
+            // 푸시 알림 관리 버튼 리스너
+            buttonManagePush.setOnClickListener { view ->
+                animateButtonClick(view)
+                val intent = Intent(this, PushManagementActivity::class.java)
+                startActivity(intent)
+            }
             Log.d(TAG, "버튼 리스너 설정 완료")
         } catch (e: Exception) {
             Log.e(TAG, "버튼 리스너 설정 실패", e)
@@ -103,6 +119,7 @@ class SettingsActivity : AppCompatActivity() {
 
         Log.d(TAG, "onCreate 완료")
 
+        // 앱 시작 시 키 확인 및 생성
         checkAndGenerateKeysIfNeeded()
     }
 
@@ -132,12 +149,56 @@ class SettingsActivity : AppCompatActivity() {
         // 현재 공유 상태 설정
         val currentShareStatus = AppPreferences.getShareStatus(this)
         shareStatusSpinner.setSelection(if (currentShareStatus) 0 else 1)
+
+        // 스피너 선택 리스너 추가
+        shareStatusSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                // 이 리스너는 UI 초기화 시에도 호출될 수 있으므로, 실제 사용자 선택 시에만 동작하도록 로직을 추가할 수 있습니다.
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
+    private fun initializeSwitch() {
+        // ViewModel의 상태를 스위치에 반영
+        notificationSwitch.isChecked = viewModel.isNotificationsEnabled
+
+        // 스위치 클릭 시, ViewModel에 이벤트 전달
+        notificationSwitch.setOnClickListener {
+            val deviceId = AppPreferences.getInput1(this)
+            val deviceKey = AppPreferences.getInput2(this)
+            if (deviceId.isEmpty() || deviceKey.isEmpty()) {
+                (it as Switch).isChecked = !it.isChecked // 상태 원상 복구
+                Toast.makeText(this, "초기 설정이 필요합니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            viewModel.onNotificationSwitchClicked((it as Switch).isChecked)
+        }
+
+        // ViewModel의 UI 상태 변경을 감지하고 UI 업데이트
+        viewModel.uiState.observe(this) { state ->
+            when (state) {
+                is UiState.Loading -> {
+                    notificationSwitch.isEnabled = false
+                }
+                is UiState.Success -> {
+                    notificationSwitch.isEnabled = true
+                    Toast.makeText(this, state.message, Toast.LENGTH_SHORT).show()
+                }
+                is UiState.Error -> {
+                    notificationSwitch.isEnabled = true
+                    notificationSwitch.isChecked = !notificationSwitch.isChecked // 실패 시 스위치 원상 복구
+                    Toast.makeText(this, state.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun checkAndGenerateKeysIfNeeded() {
         val deviceId = AppPreferences.getInput1(this)
         val deviceKey = AppPreferences.getInput2(this)
 
+        // 키가 없으면 자동 생성 다이얼로그 표시
         if (deviceId.isEmpty() || deviceKey.isEmpty()) {
             showInitialSetupDialog()
         }
@@ -183,7 +244,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     internal fun createSecureKey(length: Int): String {
-        val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+        val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#${'$'}%&'()*+,-./:;<=>?@[\\]^_`{|}~"
         return (1..length)
             .map { allowed.random() }
             .joinToString("")
@@ -204,12 +265,13 @@ class SettingsActivity : AppCompatActivity() {
             
             AppPreferences.saveBatteryMode(this, selectedBatteryMode)
             
-            // 위치 공유 상태 저장 및 서버 업데이트
+            // 위치 공유 상태 저장
             val newShareStatus = shareStatusSpinner.selectedItemPosition == 0 // 0: 허용, 1: 차단
             val oldShareStatus = AppPreferences.getShareStatus(this)
             
             if (newShareStatus != oldShareStatus) {
                 AppPreferences.saveShareStatus(this, newShareStatus)
+                // 서버 업데이트 로직을 별도로 호출
                 updateShareStatusOnServer(newShareStatus)
             }
 
@@ -241,7 +303,7 @@ class SettingsActivity : AppCompatActivity() {
         
         Thread {
             try {
-                val urlObj = URL(url)
+                val urlObj = URL(url) 
                 val connection = urlObj.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
                 connection.connectTimeout = 10000
