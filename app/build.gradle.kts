@@ -7,7 +7,7 @@ plugins {
 import java.util.Properties
 
 // 환경변수 로드
-val envFile = file(".env")
+val envFile = rootProject.file(".env")
 val envProperties = Properties()
 if (envFile.exists()) {
     envFile.readLines().forEach { line ->
